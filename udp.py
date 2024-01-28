@@ -4,7 +4,8 @@ import time
 #----------------------------------------------------------------
 global UDP_IP, UDP_PORT
 
-UDP_IP = "192.168.39.118"
+# ESP32のIPアドレスとポート番号．適宜変更
+UDP_IP = "192.168.39.118" 
 UDP_PORT = 12345
 
 # グローバル変数を使用するための宣言
@@ -22,7 +23,7 @@ def run_udp_communication(slider_queue):
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     
     prev_time = time.time()
-    send_interval = 1
+    send_interval = 0.01
     
     print("UDP通信を開始します")
     print("UDP IP: " + str(UDP_IP) + ", port: " + str(UDP_PORT))
@@ -34,6 +35,10 @@ def run_udp_communication(slider_queue):
             if slider_queue != None:
                 if not slider_queue.empty():
                     sendV, sendVd, sendR = slider_queue.get()
+                    sendV = round(sendV, 2)
+                    sendVd = round(sendVd, 2)
+                    sendR = round(sendR, 2)
+                    
             # 0.01 秒ごとにデータを送信
             if current_time - prev_time >= send_interval:
                 send_data = (str(sendV) + "," + str(sendVd) + "," + str(sendR)).encode("utf-8") # bytes型に変換

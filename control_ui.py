@@ -131,10 +131,12 @@ def controller_update(joy_queue):
     if joy_queue != None:
         if not joy_queue.empty():
             V_joy, Vd_joy, R_joy = joy_queue.get()
-        # スライダーの値を更新
-        s_V.set_val(V_joy * 2.0)
-        s_move_direction.set_val(-(Vd_joy - 90))
-        s_angular_vel.set_val(R_joy * 2.0)
+            # スライダーの値を更新
+            s_V.set_val(V_joy * 2.0)
+            s_move_direction.set_val(Vd_joy)
+            s_angular_vel.set_val(R_joy * 2.0)
+        else:
+            pass
     else:
         pass
     
@@ -142,19 +144,27 @@ def controller_update(joy_queue):
 def update(slider_queue):
     # グローバル変数を使用するための宣言
     global x, y, init_direction, move_direction_local, robot_direction_world, dt, last_time, n, wheel_spacing, R, V, angular_vel, prev_Vx_list, prev_Vy_list
-    
+    global sendV, sendVd, sendR
     # key_pressで値を変更
     fig.canvas.mpl_connect('key_press_event', key_press)
     
     # スライダーの値を取得(デフォルトでは反時計回りが正だが，直感的には時計回りが正なので-1を掛けて反転)
     V = s_V.val # [m/s]
-    move_direction_local = -1 * s_move_direction.val * math.pi / 180 # deg to rad
+    move_direction_local = s_move_direction.val * math.pi / 180 # deg to rad
     angular_vel = -1 * s_angular_vel.val # TODO: [m/s] to [rad/s] にしないといけない
     n = int(s_n.val)
     
     # キューにデータを入れる
     if slider_queue != None:
-        slider_queue.put([s_V.val, s_move_direction.val, s_angular_vel.val])
+        # キューの中身を空にする
+        while not slider_queue.empty():
+            slider_queue.get()
+        # 小数点第2位までに丸める
+        sendV = round(s_V.val, 2)
+        sendVd = round(s_move_direction.val, 2)
+        sendR = round(s_angular_vel.val, 2)
+        # キューにデータを入れる
+        slider_queue.put([sendV, sendVd, sendR])
     
     # 車輪同士の間隔を計算(車輪の数が変わったときに対応)
     wheel_spacing = 2 * math.pi / n
@@ -173,8 +183,8 @@ def update(slider_queue):
     
     # V, move_direction_localからVx, Vyを計算
     # Vx, Vy (ローカル座標系)
-    Vx = V * math.cos(move_direction_local + math.pi / 2 - robot_direction_world)
-    Vy = V * math.sin(move_direction_local + math.pi / 2 - robot_direction_world)
+    Vx = V * math.cos(move_direction_local + math.pi / 2 - robot_direction_world - math.pi / 2)
+    Vy = V * math.sin(move_direction_local + math.pi / 2 - robot_direction_world - math.pi / 2)
     
     # 車体の向きを考慮したVx,Vyを計算（ローカル座標系 → ワールド座標系）
     Vx, Vy = rot.dot(np.array([Vx, Vy]))  
@@ -225,7 +235,7 @@ def update(slider_queue):
     # n個の車輪の座標を計算し，その点から速度ベクトルを描画(ローカル座標系)
     for i in range(n):
         Q_list.append(ax.quiver(R * math.cos(init_direction + wheel_spacing * i), R * math.sin(init_direction + wheel_spacing * i), 
-                                Vx_list[i], Vy_list[i], angles='xy', scale_units='xy', scale=1, color='red'))
+                                Vx_list[i] * 0.5, Vy_list[i] * 0.5, angles='xy', scale_units='xy', scale=1, color='red'))
         
     # 車体の向きを考慮した車輪の座標を計算し，車輪を描画(ワールド座標系) 
     for i in range(n):
@@ -275,7 +285,7 @@ def update(slider_queue):
     
     fig.canvas.draw_idle() 
 
-def main(slider_queue, joy_queue):
+def main(slider_queue=None, joy_queue=None):
     while True:
         try:
             controller_update(joy_queue)
