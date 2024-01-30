@@ -21,10 +21,19 @@ if __name__ == '__main__':
         p1.start()
         p2.start()
         p3.start()
+        
         # プロセスの終了待ち
         p1.join()
         p2.join()
         p3.join()
+        
+    except Exception as e:
+        print("An error occurred:", str(e))
+        # プロセスの強制終了
+        p1.terminate()
+        p2.terminate()
+        p3.terminate()
+        
     except KeyboardInterrupt:
         print()
         pass

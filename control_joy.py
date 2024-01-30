@@ -9,21 +9,30 @@ V_joy, Vd_joy, R_joy = 0, 0, 0
 # 許容誤差
 EPS = 0.25
 
+def controller_init():
+    while True:
+        if pyg.joystick.get_count() > 0:
+            joy = pyg.joystick.Joystick(0)
+            joy.init()
+            print("Joystick name: " + joy.get_name())
+            print("Number of axes: " + str(joy.get_numaxes()))
+            print("Number of buttons: " + str(joy.get_numbuttons()))
+            print("Number of hats: " + str(joy.get_numhats()))
+            print("Number of balls: " + str(joy.get_numballs()))
+            
+            return joy
+        else:
+            print("No joysticks available...")
+            time.sleep(1)
+
 def controller_input(joy_queue):
     global V_joy, Vd_joy, R_joy
     x, y = 0, 0
     theta = 0
-    
-    pyg.init()
-    pyg.joystick.init()
-    
-    if pyg.joystick.get_count() > 0:
-        joy = pyg.joystick.Joystick(0)
-        joy.init()
-    else:
-        print("No joysticks available")
-        exit(1) # exit
-        
+    pyg.init() # pygameの初期化  
+    pyg.joystick.init() # ジョイスティックの初期化
+    joy = controller_init()
+    print("Controller input start")
     while True:
         try:
             events = pyg.event.get()
@@ -59,7 +68,15 @@ def controller_input(joy_queue):
                     joy_queue.get()
                 joy_queue.put([V_joy, Vd_joy, R_joy]) # [m/s], [deg], [m/s]
                 time.sleep(0.05)
-                    
+                
+            # もし，コントローラの接続が切れたら
+            if pyg.joystick.get_count() == 0:
+                print("Controller disconnected...")
+                V_joy, Vd_joy, R_joy = 0, 0, 0
+                joy_queue.put([V_joy, Vd_joy, R_joy]) # [m/s], [deg], [m/s]
+                joy.quit()
+                joy = controller_init()
+            
         except KeyboardInterrupt:
             print()
             joy.quit()
