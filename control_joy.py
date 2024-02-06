@@ -61,7 +61,7 @@ def controller_input(joy_queue):
                     else:
                         R_joy = 0
                         
-                # print("1: V: " + str(round(V_joy, 2)) + ", Vd: " + str(round(Vd_joy, 2)) + ", R: " + str(round(R_joy, 2)))
+                print("1: V: " + str(round(V_joy, 2)) + ", Vd: " + str(round(Vd_joy, 2)) + ", R: " + str(round(R_joy, 2)))
             if joy_queue != None:
                 # キューを空にする
                 while not joy_queue.empty():
